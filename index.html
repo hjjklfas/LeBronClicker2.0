@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LeBron Clicker</title>
+  <style>
+    :root { --bg:#1a1d29; --panel:#292f45; --text:#f5f7ff; --accent:#f3c02b; }
+    * { box-sizing:border-box; font-family:Segoe UI, Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#3b3f65 0%,#151823 55%); color:var(--text); display:flex; align-items:center; justify-content:center; padding:24px; }
+    .container { width:min(1080px,100%); display:grid; gap:24px; grid-template-columns:1.2fr 0.8fr; align-items:start; }
+    .header { grid-column:1/-1; text-align:center; }
+    .title { margin:0; font-size:clamp(2rem,5vw,3.5rem); letter-spacing:0.08em; }
+    .subtitle { margin:0.4rem 0 0; color:#bac1ff; font-size:1rem; }
+    .game-panel, .store-panel { background:rgba(27,31,48,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+    .stats { display:grid; gap:12px; margin-bottom:24px; }
+    .stat { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border-radius:14px; padding:16px; }
+    .stat strong { color:var(--accent); }
+    .click-area { width:100%; max-width:420px; aspect-ratio:1; margin:0 auto; display:grid; place-items:center; border-radius:50%; border:6px solid rgba(255,255,255,0.12); background:linear-gradient(180deg,#23294b 0%,#171b2e 100%); box-shadow:inset 0 0 45px rgba(255,255,255,0.04), 0 24px 60px rgba(0,0,0,0.35); cursor:pointer; transition:transform .2s ease, box-shadow .2s ease; position:relative; overflow:hidden; }
+    .click-area:active { transform:scale(.98); box-shadow:inset 0 0 35px rgba(255,255,255,0.08), 0 20px 40px rgba(0,0,0,0.35); }
+    .click-area:hover .click-image { box-shadow:0 0 50px rgba(243,192,43,0.35), 0 0 0 14px rgba(250,188,0,0.12); }
+    .click-image { width:230px; height:230px; border-radius:50%; display:grid; place-items:center; overflow:hidden; transition:all .25s ease; position:relative; box-shadow:0 0 0 14px rgba(250,188,0,0.12); background:rgba(255,255,255,0.08); font-size:5rem; line-height:1; }
+    .click-image img { width:100%; height:100%; object-fit:cover; display:block; }
+    .click-image.skin-king { box-shadow:0 0 0 14px rgba(215,179,47,0.18); }
+    .click-image.skin-allstar { box-shadow:0 0 0 14px rgba(25,99,255,0.18); }
+    .click-image.skin-heat { box-shadow:0 0 0 14px rgba(244,90,78,0.18); }
+    .click-image.skin-space { box-shadow:0 0 0 14px rgba(82,81,255,0.18); }
+    .click-image.skin-royal { box-shadow:0 0 0 14px rgba(108,92,255,0.18); }
+    .click-image.skin-sunshine { box-shadow:0 0 0 14px rgba(255,221,75,0.25); }
+    .click-image.skin-shadow { box-shadow:0 0 0 14px rgba(86,84,103,0.25); }
+    .click-image.skin-blaze { box-shadow:0 0 0 14px rgba(255,102,44,0.25); }
+    .click-image.skin-frost { box-shadow:0 0 0 14px rgba(150,215,255,0.25); }
+    .click-image.skin-lb26 { box-shadow:0 0 0 14px rgba(18,205,135,0.3); }
+    .click-image.skin-goat { box-shadow:0 0 0 14px rgba(255,255,255,0.32); }
+    .click-image.skin-cosmic { box-shadow:0 0 0 14px rgba(121,80,255,0.25); }
+    .click-image.skin-titan { box-shadow:0 0 0 14px rgba(255,112,183,0.25); }
+    .click-image.skin-legend { box-shadow:0 0 0 14px rgba(255,255,255,0.28); }
+    .click-image::after { content:'LEBRON'; position:absolute; bottom:18px; left:50%; transform:translateX(-50%); font-size:.9rem; letter-spacing:.22em; color:rgba(255,255,255,.95); text-shadow:0 2px 6px rgba(0,0,0,.35); }
+    .click-label { position:absolute; top:18px; left:50%; transform:translateX(-50%); font-size:1rem; color:#dbdeff; letter-spacing:.15em; text-transform:uppercase; opacity:.95; }
+    .store-list { display:grid; gap:14px; max-height:520px; overflow-y:auto; padding-right:4px; }
+    .store-list::-webkit-scrollbar { width:10px; }
+    .store-list::-webkit-scrollbar-thumb { background:rgba(243,192,43,0.35); border-radius:10px; }
+    .store-list::-webkit-scrollbar-track { background:rgba(255,255,255,0.04); }
+    .store-item { display:grid; grid-template-columns:1fr auto; gap:14px; padding:16px; border-radius:18px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+    .store-item-title { margin:0; font-size:1rem; }
+    .store-item-desc { margin:0; color:#b8bfd6; font-size:.92rem; line-height:1.4; }
+    .store-item-meta { color:#d0d7f5; font-size:.94rem; }
+    .button { border:none; border-radius:14px; padding:12px 18px; font-size:.98rem; cursor:pointer; transition:transform .2s ease, background .2s ease; min-width:110px; background:linear-gradient(135deg,var(--accent),#ea9a29); color:#1c1721; font-weight:700; }
+    .button.disabled { background:rgba(255,255,255,0.08); color:rgba(255,255,255,.55); cursor:not-allowed; }
+    .code-panel { position:fixed; top:16px; left:16px; width:min(320px,calc(100vw - 32px)); background:rgba(15,18,32,0.96); border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:16px; box-shadow:0 20px 50px rgba(0,0,0,0.25); z-index:20; }
+    .code-panel h3 { margin:0 0 10px; font-size:0.95rem; letter-spacing:0.16em; color:#f3c02b; text-transform:uppercase; }
+    .code-panel p { margin:0 0 10px; color:#c1c9e8; font-size:.9rem; line-height:1.4; }
+    .code-panel input { width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:#f5f7ff; margin-bottom:10px; }
+    .code-panel button { width:100%; }
+    .code-panel .code-message { min-height:20px; font-size:.88rem; color:#b8bfd6; }
+    @media(max-width:900px) { .container { grid-template-columns:1fr } }
+    @media(max-width:540px) { .click-image { width:180px; height:180px } .store-item { padding:14px } }
+  </style>
+</head>
+<body>
+  <div class="code-panel" id="codePanel">
+    <h3>Enter Code</h3>
+    <p>Enter a secret promo code here to unlock hidden skins.</p>
+    <input type="text" id="codeInput" placeholder="ENTER SECRET CODE" autocomplete="off" />
+    <button class="button" id="codeButton" type="button">Redeem</button>
+    <div class="code-message" id="codeMessage"></div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1 class="title">LeBron Clicker</h1>
+      <p class="subtitle">Tap the King, earn points, and unlock skins in the store.</p>
+    </div>
+
+    <section class="game-panel">
+      <div class="stats">
+        <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+        <div class="stat"><span>Click Power</span><strong id="power">1</strong></div>
+      </div>
+
+      <div class="click-area" id="clicker">
+        <div class="click-image skin-classic" id="clickImage">👑</div>
+        <div class="click-label">Tap LeBron</div>
+      </div>
+    </section>
+
+    <section class="store-panel">
+      <h2>Skin Store</h2>
+      <div class="store-list" id="storeList"></div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      score: 0,
+      clickPower: 1,
+      currentSkin: 'classic',
+      ownedSkins: new Set(['classic']),
+      skins: [
+        { id:'classic', name:'Classic King', price:0, description:'Default LeBron style. Ready to click.', class:'skin-classic', bonus:0 },
+        { id:'king', name:'Crowned King', price:120, description:'Golden crown skin with royal click power.', class:'skin-king', bonus:1 },
+        { id:'allstar', name:'All-Star', price:420, description:'All-Star colorway and faster clicks.', class:'skin-allstar', bonus:2 },
+        { id:'heat', name:'Heat Mode', price:960, description:'Heat-themed skin for blazing scoring.', class:'skin-heat', bonus:4 },
+        { id:'space', name:'Space Jam', price:1600, description:'Space Jam style, cosmic click energy.', class:'skin-space', bonus:6 },
+        { id:'royal', name:'Royal Prime', price:2800, description:'Premium royal skin and max click flow.', class:'skin-royal', bonus:10 },
+        { id:'sunshine', name:'Sunshine', price:4200, description:'Radiant golden glow that brightens every tap.', class:'skin-sunshine', bonus:12 },
+        { id:'shadow', name:'Shadow Fade', price:5600, description:'Dark and sleek with a mysterious click energy.', class:'skin-shadow', bonus:15 },
+        { id:'blaze', name:'Blaze Mode', price:7600, description:'Fiery charging clicks that heat up your score.', class:'skin-blaze', bonus:18 },
+        { id:'frost', name:'Frostbite', price:9800, description:'Icy chill skin with crisp power boosts.', class:'skin-frost', bonus:22 },
+        { id:'cosmic', name:'Cosmic Prime', price:14000, description:'Galactic energy from another dimension.', class:'skin-cosmic', bonus:26 },
+        { id:'titan', name:'Titan Reign', price:21000, description:'Titan-level strength and epic scoring.', class:'skin-titan', bonus:34 },
+        { id:'code-lb26', name:'LB26', price:0, description:'Unlocked only with the LB26 code.', class:'skin-lb26', bonus:14, codeOnly:true },
+        { id:'code-goat', name:'MRPENGISTHEGOAT', price:0, description:'Unlocked only with the MRPENGISTHEGOAT code.', class:'skin-goat', bonus:30, codeOnly:true },
+        { id:'legend', name:' K I N G ', price:99999, description:'The hardest unlock with the ultimate LeBron power.', class:'skin-legend', bonus:55 }
+      ]
+    };
+
+    const scoreEl = document.getElementById('score');
+    const powerEl = document.getElementById('power');
+    const clicker = document.getElementById('clicker');
+    const clickImage = document.getElementById('clickImage');
+    const storeList = document.getElementById('storeList');
+
+    function formatPoints(v) { return v.toLocaleString(); }
+    function updateUi() {
+      scoreEl.textContent = formatPoints(state.score);
+      powerEl.textContent = formatPoints(state.clickPower);
+      clickImage.className = `click-image ${state.skins.find(s => s.id === state.currentSkin).class}`;
+      clickImage.textContent = state.currentSkin === 'code-goat' ? '😎' : '👑';
+      renderStore();
+    }
+    const validCodes = {
+      LB26: { skinId: 'code-lb26', message: 'Code accepted! LB26 skin unlocked.' },
+      MRPENGISTHEGOAT: { skinId: 'code-goat', message: 'Code accepted! MRPENGISTHEGOAT skin unlocked.' }
+    };
+    const redeemedCodes = new Set();
+
+    function redeemCode() {
+      const input = document.getElementById('codeInput');
+      const message = document.getElementById('codeMessage');
+      const code = input.value.trim().toUpperCase();
+
+      if (!validCodes[code]) {
+        message.textContent = 'Invalid code. Only LB26 or MRPENGISTHEGOAT are allowed.';
+        return;
+      }
+
+      if (redeemedCodes.has(code)) {
+        message.textContent = 'This code has already been redeemed.';
+        return;
+      }
+
+      redeemedCodes.add(code);
+      const skinId = validCodes[code].skinId;
+      state.ownedSkins.add(skinId);
+      equipSkin(skinId);
+      message.textContent = validCodes[code].message;
+      input.value = '';
+    }
+
+    function addPoints(n) { state.score += n; updateUi(); }
+    function buySkin(s) {
+      if (state.score < s.price || state.ownedSkins.has(s.id)) return;
+      state.score -= s.price;
+      state.ownedSkins.add(s.id);
+      equipSkin(s.id);
+      updateUi();
+    }
+    function equipSkin(id) {
+      const sk = state.skins.find(s => s.id === id);
+      if (!sk || !state.ownedSkins.has(id)) return;
+      state.currentSkin = id;
+      state.clickPower = 1 + sk.bonus;
+      updateUi();
+    }
+
+    function renderStore() {
+      storeList.innerHTML = '';
+      state.skins.forEach(skin => {
+        const item = document.createElement('div');
+        item.className = 'store-item';
+        if (skin.id === state.currentSkin) item.classList.add('active');
+
+        const info = document.createElement('div');
+        info.className = 'store-item-info';
+        const metaLabel = skin.codeOnly ? 'CODE ONLY' : (skin.price === 0 ? 'FREE' : skin.price + ' pts');
+        info.innerHTML = `<p class="store-item-title">${skin.name}</p><p class="store-item-desc">${skin.description}</p><div class="store-item-meta">${metaLabel} • Bonus +${skin.bonus}</div>`;
+
+        const btn = document.createElement('button');
+        btn.className = 'button';
+
+        if (skin.id === state.currentSkin) {
+          btn.textContent = 'Equipped';
+          btn.classList.add('disabled');
+          btn.disabled = true;
+        } else if (state.ownedSkins.has(skin.id)) {
+          btn.textContent = 'Equip';
+          btn.addEventListener('click', () => equipSkin(skin.id));
+        } else if (skin.codeOnly) {
+          btn.textContent = 'Code required';
+          btn.classList.add('disabled');
+          btn.disabled = true;
+        } else {
+          btn.textContent = `Buy ${skin.price}`;
+          if (state.score < skin.price) {
+            btn.classList.add('disabled');
+            btn.disabled = true;
+          }
+          btn.addEventListener('click', () => buySkin(skin));
+        }
+
+        item.appendChild(info);
+        item.appendChild(btn);
+        storeList.appendChild(item);
+      });
+    }
+
+    clicker.addEventListener('click', () => {
+      addPoints(state.clickPower);
+      try { playLeBronSound(); } catch (e) { }
+      clicker.animate(
+        [{ transform: 'scale(1)' }, { transform: 'scale(.96)' }, { transform: 'scale(1)' }],
+        { duration: 140, easing: 'ease-out' }
+      );
+    });
+
+    document.getElementById('codeButton').addEventListener('click', redeemCode);
+    document.getElementById('codeInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') redeemCode();
+    });
+
+    updateUi();
+  </script>
+
+  <!-- Hidden YouTube player for the provided Shorts clip -->
+  <div id="yt-player" style="position:absolute;width:1px;height:1px;left:-9999px;overflow:hidden;"></div>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    // Video ID from: https://www.youtube.com/shorts/fNIOaq1caeQ
+    let ytPlayer = null;
+    let playerReady = false;
+    let pendingPlay = false;
+
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('yt-player', {
+        height: '0',
+        width: '0',
+        videoId: 'fNIOaq1caeQ',
+        playerVars: { autoplay: 0, controls: 0, rel: 0, modestbranding: 1, playsinline: 1 },
+        events: {
+          onReady: function() {
+            playerReady = true;
+            if (pendingPlay) {
+              pendingPlay = false;
+              try { ytPlayer.seekTo(0); } catch (e) { }
+              ytPlayer.playVideo();
+            }
+          }
+        }
+      });
+    }
+
+    function playLeBronSound() {
+      if (playerReady && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+        try { ytPlayer.seekTo(0); } catch (e) { }
+        ytPlayer.playVideo();
+      } else {
+        pendingPlay = true;
+      }
+    }
+  </script>
+</body>
+</html>
